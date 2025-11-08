@@ -1,6 +1,5 @@
 
-// ✅ Use only the browser-safe SDK for Next.js + Live Preview
-import * as contentstack from "@contentstack/delivery-sdk/browser";
+import * as contentstack from "contentstack";
 
 
 import ContentstackLivePreview, {
