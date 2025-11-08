@@ -1,4 +1,5 @@
-import * as contentstack from "@contentstack/delivery-sdk";
+import * as contentstack from "contentstack";
+
 import ContentstackLivePreview, {
   VB_EmptyBlockParentClass,
 } from "@contentstack/live-preview-utils";
