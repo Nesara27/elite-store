@@ -147,23 +147,25 @@ export const getShopPage = async () => {
 export const getAboutPage = async () => {
   try {
     console.log("ℹ️ Fetching About Page...");
-    
-    // ✅ Fetch by specific entry UID
-    let entry = Stack.ContentType("about_page").Entry("blta084a7364fb8b5ef");
-    entry = withLivePreview(entry);
-    
-    const result = await entry
+
+    let query = Stack.ContentType("about_page").Query();
+    query = withLivePreview(query);
+
+    const result = await query
       .includeReference(["team", "timeline", "stats", "values"])
       .toJSON()
-      .fetch();
-    
-    console.log("✅ About Page fetched:", result?.entry?.title || "Untitled");
-    return result.entry;
+      .find();
+
+    const entry = result?.[0]?.[0];
+    console.log("✅ About Page fetched:", entry?.title || "Untitled");
+    console.log("🧩 Raw entry:", entry);
+    return entry;
   } catch (error) {
     console.error("❌ Error fetching About Page:", error);
     return null;
   }
 };
+
 
 // ==============================
 // ⚙️ SERVICES PAGE
