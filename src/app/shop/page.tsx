@@ -18,6 +18,9 @@ import { ClientLayout } from "@/components/ClientLayout";
 import { useCart } from "@/hooks/useCart";
 import { getShopPage, getProductPage, getAllProducts } from "@/lib/contentstack";
 
+// ==============================
+// 🧾 Product Type
+// ==============================
 type LocalProduct = {
   id: string;
   name: string;
@@ -33,6 +36,9 @@ type LocalProduct = {
   features?: string[];
 };
 
+// ==============================
+// 🛍️ SHOP PAGE COMPONENT
+// ==============================
 export default function ShopPage() {
   const searchParams = useSearchParams();
   const { addToCart } = useCart();
@@ -48,24 +54,27 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // ==============================
+  // 🔄 Fetch Products
+  // ==============================
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       setLoading(true);
       setErrorMsg(null);
 
       try {
-        // 🧩 Try Shop Page first
         let data: any = await getShopPage();
         console.log("📦 shop_page raw:", data);
 
-        // 🧩 If shop page missing, fallback to product_page
+        // fallback to product_page if shop_page not found
         if (!data || !data.products) {
           console.warn("⚠️ No shop_page data. Falling back to product_page...");
           data = await getProductPage();
         }
 
-        // 🧩 If still missing, fallback to all products
+        // fallback to all products if still missing
         if (!data || !data.products) {
           console.warn("⚠️ No product_page data. Falling back to all products...");
           const allProducts = await getAllProducts();
@@ -76,9 +85,7 @@ export default function ShopPage() {
           throw new Error("No product data found from any source.");
         }
 
-        // -------------------------
         // Normalize categories
-        // -------------------------
         const rawCategories = data.categories ?? [];
         const normalizedCategories: string[] = [];
 
@@ -88,24 +95,21 @@ export default function ShopPage() {
             if (typeof c === "string") normalizedCategories.push(c);
             else if (typeof c === "object") {
               const name =
-                c.category_name ??
-                c.name ??
-                c.title ??
-                (typeof c === "string" ? c : undefined);
+                c.category_name ?? c.name ?? c.title ?? undefined;
               if (name) normalizedCategories.push(String(name).trim());
             }
           }
         }
+
         const uniqueCats = Array.from(new Set(normalizedCategories)).filter(Boolean);
 
-        // -------------------------
         // Normalize products
-        // -------------------------
         const rawProducts = data.products ?? [];
         const normalizedProducts: LocalProduct[] = [];
 
         for (const p of rawProducts) {
           if (!p) continue;
+
           const id =
             p.uid ||
             p.identity ||
@@ -113,19 +117,21 @@ export default function ShopPage() {
             p.title ||
             Math.random().toString(36).slice(2, 9);
 
-          let imageUrl = "";
-          if (typeof p.image === "string") imageUrl = p.image;
-          else if (p.image?.url) imageUrl = p.image.url;
+          const imageUrl =
+            typeof p.image === "string"
+              ? p.image
+              : p.image?.url || "/placeholder.png";
 
           let features: string[] | undefined;
           if (p.features) {
-            if (Array.isArray(p.features))
+            if (Array.isArray(p.features)) {
               features = p.features.map((f: any) =>
                 typeof f === "string" ? f : f?.feature_text ?? ""
               );
-            else if (typeof p.features === "string")
-              // ✅ Fixed TypeScript type for 's'
+            } else if (typeof p.features === "string") {
+              // ✅ FIXED TypeScript typing for 's'
               features = p.features.split(/\r?\n/).map((s: string) => s.trim());
+            }
           }
 
           normalizedProducts.push({
@@ -137,7 +143,7 @@ export default function ShopPage() {
             category:
               p.category ??
               (Array.isArray(p.categories) ? p.categories[0] : "Uncategorized"),
-            image: imageUrl || "/placeholder.png",
+            image: imageUrl,
             images:
               Array.isArray(p.images) && p.images.length
                 ? p.images.map((img: any) => img.url ?? img)
@@ -155,8 +161,7 @@ export default function ShopPage() {
         }
       } catch (err: any) {
         console.error("❌ Error fetching Shop Page:", err);
-        const msg =
-          err?.message || "Failed to fetch products from Contentstack.";
+        const msg = err?.message || "Failed to fetch products from Contentstack.";
         if (mounted) setErrorMsg(msg);
       } finally {
         if (mounted) setLoading(false);
@@ -168,6 +173,7 @@ export default function ShopPage() {
     };
   }, []);
 
+  // Sync URL params
   useEffect(() => {
     const category = searchParams.get("category");
     const search = searchParams.get("search");
@@ -175,8 +181,12 @@ export default function ShopPage() {
     if (search) setSearchQuery(search);
   }, [searchParams]);
 
+  // ==============================
+  // 🔍 Filter + Sort Products
+  // ==============================
   const filteredProducts = useMemo(() => {
     let result = [...products];
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -186,9 +196,11 @@ export default function ShopPage() {
           p.category.toLowerCase().includes(q)
       );
     }
+
     if (selectedCategory && selectedCategory !== "all") {
       result = result.filter((p) => p.category === selectedCategory);
     }
+
     switch (sortBy) {
       case "price-low":
         result.sort((a, b) => a.price - b.price);
@@ -203,10 +215,15 @@ export default function ShopPage() {
         result.sort((a, b) => a.name.localeCompare(b.name));
         break;
       default:
+        break;
     }
+
     return result;
   }, [products, searchQuery, selectedCategory, sortBy]);
 
+  // ==============================
+  // 🧩 Render Logic
+  // ==============================
   if (loading) {
     return (
       <ClientLayout>
@@ -231,6 +248,9 @@ export default function ShopPage() {
     );
   }
 
+  // ==============================
+  // 🛍️ Render Products
+  // ==============================
   return (
     <ClientLayout>
       <div className="container mx-auto px-4 py-8">
@@ -263,27 +283,19 @@ export default function ShopPage() {
                 All
               </Badge>
 
-              {categories.length > 0
-                ? categories.map((category) => (
-                    <Badge
-                      key={category}
-                      variant={selectedCategory === category ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedCategory(category)}
-                    >
-                      {category}
-                    </Badge>
-                  ))
-                : Array.from(new Set(products.map((p) => p.category))).map((category) => (
-                    <Badge
-                      key={category}
-                      variant={selectedCategory === category ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedCategory(category)}
-                    >
-                      {category}
-                    </Badge>
-                  ))}
+              {(categories.length > 0
+                ? categories
+                : Array.from(new Set(products.map((p) => p.category)))
+              ).map((category) => (
+                <Badge
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </Badge>
+              ))}
             </div>
 
             <Select value={sortBy} onValueChange={setSortBy}>
@@ -302,7 +314,7 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* Results */}
+        {/* Product Results */}
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
