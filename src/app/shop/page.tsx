@@ -1,345 +1,255 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { ProductCard } from "@/components/ui/ProductCard";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { getShopPage } from "@/lib/contentstack";
 import { ClientLayout } from "@/components/ClientLayout";
-import { useCart } from "@/hooks/useCart";
-import { getShopPage, getProductPage, getAllProducts } from "@/lib/contentstack";
-
-type LocalProduct = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  originalPrice?: number;
-  category: string;
-  image: string;
-  images?: string[];
-  inStock: boolean;
-  rating: number;
-  reviewCount: number;
-  features?: string[];
-};
+import { ParticleBackground } from "@/components/ParticleBackground";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, Star, Sparkles, Filter } from "lucide-react";
+import ContentstackLivePreview from "@contentstack/live-preview-utils";
 
 export default function ShopPage() {
-  const searchParams = useSearchParams();
-  const { addToCart } = useCart();
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    searchParams.get("category") || "all"
-  );
-  const [sortBy, setSortBy] = useState("featured");
-
-  const [products, setProducts] = useState<LocalProduct[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [page, setPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  const getContent = async () => {
+    try {
+      console.log("🔄 Fetching Shop Page data...");
+      const data = await getShopPage();
+      console.log("📄 Shop Page data received:", data);
+      setPage(data);
+      setLoading(false);
+    } catch (error) {
+      console.error("❌ Error fetching Shop Page data:", error);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      setLoading(true);
-      setErrorMsg(null);
-
-      try {
-        // 🧩 Try Shop Page first
-        let data: any = await getShopPage();
-        console.log("📦 shop_page raw:", data);
-
-        // 🧩 If shop page missing, fallback to product_page
-        if (!data || !data.products) {
-          console.warn("⚠️ No shop_page data. Falling back to product_page...");
-          data = await getProductPage();
-        }
-
-        // 🧩 If still missing, fallback to all products
-        if (!data || !data.products) {
-          console.warn("⚠️ No product_page data. Falling back to all products...");
-          const allProducts = await getAllProducts();
-          data = { products: allProducts, categories: [] };
-        }
-
-        if (!data || !data.products) {
-          throw new Error("No product data found from any source.");
-        }
-
-        // -------------------------
-        // Normalize categories
-        // -------------------------
-        const rawCategories = data.categories ?? [];
-        const normalizedCategories: string[] = [];
-
-        if (Array.isArray(rawCategories)) {
-          for (const c of rawCategories) {
-            if (!c) continue;
-            if (typeof c === "string") normalizedCategories.push(c);
-            else if (typeof c === "object") {
-              const name =
-                c.category_name ??
-                c.name ??
-                c.title ??
-                (typeof c === "string" ? c : undefined);
-              if (name) normalizedCategories.push(String(name).trim());
-            }
-          }
-        }
-        const uniqueCats = Array.from(new Set(normalizedCategories)).filter(Boolean);
-
-        // -------------------------
-        // Normalize products
-        // -------------------------
-        const rawProducts = data.products ?? [];
-        const normalizedProducts: LocalProduct[] = [];
-
-        for (const p of rawProducts) {
-          if (!p) continue;
-          const id =
-            p.uid ||
-            p.identity ||
-            p._metadata?.uid ||
-            p.title ||
-            Math.random().toString(36).slice(2, 9);
-
-          let imageUrl = "";
-          if (typeof p.image === "string") imageUrl = p.image;
-          else if (p.image?.url) imageUrl = p.image.url;
-
-          let features: string[] | undefined;
-          if (p.features) {
-            if (Array.isArray(p.features))
-              features = p.features.map((f: any) =>
-                typeof f === "string" ? f : f?.feature_text ?? ""
-              );
-            else if (typeof p.features === "string")
-              features = p.features.split(/\r?\n/).map((s) => s.trim());
-          }
-
-          normalizedProducts.push({
-            id: String(id),
-            name: p.name ?? p.title ?? "Unnamed Product",
-            description: p.description ?? "",
-            price: Number(p.price ?? 0),
-            originalPrice: p.original_price ? Number(p.original_price) : undefined,
-            category:
-              p.category ??
-              (Array.isArray(p.categories) ? p.categories[0] : "Uncategorized"),
-            image: imageUrl || "/placeholder.png",
-            images:
-              Array.isArray(p.images) && p.images.length
-                ? p.images.map((img: any) => img.url ?? img)
-                : [imageUrl],
-            inStock: p.in_stock ?? true,
-            rating: Number(p.rating ?? 4.5),
-            reviewCount: Number(p.review_count ?? 0),
-            features,
-          });
-        }
-
-        if (mounted) {
-          setCategories(uniqueCats);
-          setProducts(normalizedProducts);
-        }
-      } catch (err: any) {
-        console.error("❌ Error fetching Shop Page:", err);
-        const msg =
-          err?.message || "Failed to fetch products from Contentstack.";
-        if (mounted) setErrorMsg(msg);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
+    getContent();
   }, []);
 
+  // 🔄 Listen for Live Preview changes
   useEffect(() => {
-    const category = searchParams.get("category");
-    const search = searchParams.get("search");
-    if (category) setSelectedCategory(category);
-    if (search) setSearchQuery(search);
-  }, [searchParams]);
-
-  const filteredProducts = useMemo(() => {
-    let result = [...products];
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
-      );
+    if (typeof window !== "undefined") {
+      ContentstackLivePreview.onEntryChange(getContent);
     }
-    if (selectedCategory && selectedCategory !== "all") {
-      result = result.filter((p) => p.category === selectedCategory);
-    }
-    switch (sortBy) {
-      case "price-low":
-        result.sort((a, b) => a.price - b.price);
-        break;
-      case "price-high":
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case "rating":
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      case "name":
-        result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      default:
-    }
-    return result;
-  }, [products, searchQuery, selectedCategory, sortBy]);
+  }, []);
 
   if (loading) {
     return (
       <ClientLayout>
-        <div className="flex justify-center items-center min-h-screen text-xl py-40">
+        <div className="text-center py-32 text-lg text-muted-foreground">
           Loading Shop...
         </div>
       </ClientLayout>
     );
   }
 
-  if (errorMsg) {
+  if (!page) {
     return (
       <ClientLayout>
-        <div className="flex flex-col items-center justify-center min-h-screen text-center py-40">
-          <div className="text-2xl text-red-600 font-semibold mb-4">
-            ❌ Error loading Shop Page.
+        <div className="text-center py-32">
+          <div className="text-red-500 text-xl font-bold mb-4">
+            ❌ Failed to load Shop Page content
           </div>
-          <div className="text-sm text-muted-foreground mb-6 max-w-lg">{errorMsg}</div>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
+          <Button onClick={getContent} className="mt-4">
+            Retry
+          </Button>
         </div>
       </ClientLayout>
     );
   }
 
+  const { hero_heading, hero_subtext, products = [], categories = [] } = page;
+
+  // ✅ Normalize products to ensure features is always a string
+  const normalizedProducts = products.map((p: any) => {
+    let features = "";
+    
+    // Handle different types of features field
+    if (typeof p.features === "string") {
+      features = p.features;
+    } else if (Array.isArray(p.features)) {
+      features = p.features.join(", ");
+    } else if (p.features && typeof p.features === "object") {
+      features = JSON.stringify(p.features);
+    }
+    
+    return {
+      ...p,
+      features: features,
+      // Parse features into array for display
+      featuresArray: features ? features.split(/\r?\n/).filter(Boolean) : []
+    };
+  });
+
+  // Filter products by category
+  const filteredProducts =
+    selectedCategory === "all"
+      ? normalizedProducts
+      : normalizedProducts.filter((p: any) => p.category === selectedCategory);
+
   return (
     <ClientLayout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Shop</h1>
-          <p className="text-muted-foreground">
-            Browse our collection of {products.length} premium products
-          </p>
-        </div>
+      <div className="relative overflow-hidden">
+        {/* Hero Section */}
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+          <ParticleBackground />
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/5 to-pink-500/10" />
 
-        {/* Filters */}
-        <div className="mb-8 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-8">
+                <ShoppingCart className="h-5 w-5 text-purple-400 animate-pulse" />
+                <span className="text-sm font-medium">Premium Products</span>
+              </div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 flex flex-wrap gap-2">
-              <Badge
-                variant={selectedCategory === "all" ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => setSelectedCategory("all")}
+              <h1
+                {...(page.$?.hero_heading)}
+                className="text-6xl md:text-7xl font-bold mb-6"
               >
-                All
-              </Badge>
+                {hero_heading || "Shop Our Collection"}
+              </h1>
 
-              {categories.length > 0
-                ? categories.map((category) => (
-                    <Badge
-                      key={category}
-                      variant={selectedCategory === category ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedCategory(category)}
-                    >
-                      {category}
-                    </Badge>
-                  ))
-                : Array.from(new Set(products.map((p) => p.category))).map((category) => (
-                    <Badge
-                      key={category}
-                      variant={selectedCategory === category ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedCategory(category)}
-                    >
-                      {category}
-                    </Badge>
-                  ))}
+              <p
+                {...(page.$?.hero_subtext)}
+                className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
+              >
+                {hero_subtext || "Discover premium products"}
+              </p>
             </div>
+          </div>
+        </section>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SlidersHorizontal className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="featured">Featured</SelectItem>
-                <SelectItem value="price-low">Price: Low to High</SelectItem>
-                <SelectItem value="price-high">Price: High to Low</SelectItem>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-                <SelectItem value="name">Name: A to Z</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Results */}
-        {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={() =>
-                  addToCart({
-                    id: product.id,
-                    name: product.name,
-                    description: product.description,
-                    price: product.price,
-                    category: product.category,
-                    image: product.image,
-                    inStock: product.inStock,
-                    rating: product.rating,
-                    reviewCount: product.reviewCount,
-                    features: product.features,
-                  })
-                }
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <p className="text-lg text-muted-foreground">No products found</p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedCategory("all");
-              }}
-            >
-              Clear Filters
-            </Button>
-          </div>
+        {/* Categories Filter */}
+        {categories.length > 0 && (
+          <section className="py-8 border-b border-border/50">
+            <div className="container mx-auto px-4">
+              <div className="flex items-center gap-4 overflow-x-auto pb-4">
+                <Filter className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                <Button
+                  variant={selectedCategory === "all" ? "default" : "outline"}
+                  onClick={() => setSelectedCategory("all")}
+                  className="flex-shrink-0"
+                >
+                  All Products
+                </Button>
+                {categories.map((cat: any, index: number) => (
+                  <Button
+                    key={index}
+                    variant={
+                      selectedCategory === cat.name ? "default" : "outline"
+                    }
+                    onClick={() => setSelectedCategory(cat.name)}
+                    className="flex-shrink-0"
+                  >
+                    {cat.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </section>
         )}
+
+        {/* Products Grid */}
+        <section className="py-24">
+          <div className="container mx-auto px-4">
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">
+                No products found in this category.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredProducts.map((product: any, index: number) => (
+                  <div
+                    key={index}
+                    className="group relative rounded-2xl glass border border-primary/20 overflow-hidden hover-lift"
+                  >
+                    {/* Product Image */}
+                    <div className="relative aspect-square overflow-hidden">
+                      <img
+                        src={product.image?.url || "/placeholder.png"}
+                        alt={product.product_name || "Product"}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      {product.badge && (
+                        <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-bold">
+                          {product.badge}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Product Info */}
+                    <div className="p-6">
+                      <h3
+                        {...(page.$?.products?.[index]?.product_name)}
+                        className="text-xl font-bold mb-2"
+                      >
+                        {product.product_name || "Product"}
+                      </h3>
+
+                      <p
+                        {...(page.$?.products?.[index]?.description)}
+                        className="text-muted-foreground text-sm mb-4 line-clamp-2"
+                      >
+                        {product.description || "No description"}
+                      </p>
+
+                      {/* Features */}
+                      {product.featuresArray && product.featuresArray.length > 0 && (
+                        <ul className="space-y-1 mb-4">
+                          {product.featuresArray.slice(0, 3).map((feature: string, i: number) => (
+                            <li
+                              key={i}
+                              className="text-sm text-muted-foreground flex items-start gap-2"
+                            >
+                              <Sparkles className="h-4 w-4 text-purple-500 flex-shrink-0 mt-0.5" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {/* Price & Rating */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div
+                          {...(page.$?.products?.[index]?.price)}
+                          className="text-2xl font-bold gradient-text"
+                        >
+                          ${product.price || "0"}
+                        </div>
+                        {product.rating && (
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="text-sm font-medium">
+                              {product.rating}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* CTA Button */}
+                      <Button
+                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                        asChild
+                      >
+                        <Link
+                          href={`/product/${product.uid || product._metadata?.uid}`}
+                        >
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          View Details
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </ClientLayout>
   );
