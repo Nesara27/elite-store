@@ -130,7 +130,8 @@ export default function ShopPage() {
               );
             } else if (typeof p.features === "string") {
               // ✅ FIXED TypeScript typing for 's'
-              features = p.features.split(/\r?\n/).map((s: string) => s.trim());
+             features = p.features.split(/\r?\n/).map((s: string) => s.trim());
+
             }
           }
 
