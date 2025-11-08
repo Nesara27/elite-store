@@ -1,7 +1,5 @@
-
+// ✅ Import Contentstack SDK + Live Preview Utils
 import * as contentstack from "contentstack";
-
-
 import ContentstackLivePreview, {
   VB_EmptyBlockParentClass,
 } from "@contentstack/live-preview-utils";
@@ -12,13 +10,14 @@ import ContentstackLivePreview, {
 const API_KEY =
   process.env.NEXT_PUBLIC_CONTENTSTACK_API_KEY || "blt18d10037183f942b";
 const DELIVERY_TOKEN =
-  process.env.NEXT_PUBLIC_CONTENTSTACK_DELIVERY_TOKEN || "cs2db14d3ab10ccece9d42e28a";
+  process.env.NEXT_PUBLIC_CONTENTSTACK_DELIVERY_TOKEN ||
+  "cs2db14d3ab10ccece9d42e28a";
 const PREVIEW_TOKEN =
-  process.env.NEXT_PUBLIC_CONTENTSTACK_PREVIEW_TOKEN || "cs565b41a59524c55a6a9bbff3";
+  process.env.NEXT_PUBLIC_CONTENTSTACK_PREVIEW_TOKEN ||
+  "cs565b41a59524c55a6a9bbff3";
 const ENVIRONMENT =
   process.env.NEXT_PUBLIC_CONTENTSTACK_ENVIRONMENT || "development";
 const BRANCH = process.env.NEXT_PUBLIC_CONTENTSTACK_BRANCH || "main";
-
 const PREVIEW_HOST = "rest-preview.contentstack.com";
 
 // ==============================
@@ -35,12 +34,11 @@ export const Stack = contentstack.Stack({
     enable: true,
     preview_token: PREVIEW_TOKEN,
     host: PREVIEW_HOST,
-    management_token: null,
   },
 });
 
 // ==============================
-// 🧠 Initialize Live Preview SDK (Browser only)
+// 🧠 Initialize Contentstack Live Preview (Browser only)
 // ==============================
 if (typeof window !== "undefined") {
   window.addEventListener("load", () => {
@@ -72,6 +70,7 @@ if (typeof window !== "undefined") {
             },
             cleanCslpOnProduction: true,
           });
+
           console.log("✅ Live Preview SDK initialized successfully");
           window.__CS_LIVE_PREVIEW_INIT__ = true;
         }
@@ -148,13 +147,18 @@ export const getShopPage = async () => {
 export const getAboutPage = async () => {
   try {
     console.log("ℹ️ Fetching About Page...");
-    let query = Stack.ContentType("about_page").Query();
-    query = withLivePreview(query);
-    query.includeReference(["team", "timeline", "stats", "values"]);
-    const result = await query.toJSON().find();
-    const entry = result?.[0]?.[0];
-    console.log("✅ About Page fetched:", entry?.title || "Untitled");
-    return entry;
+    
+    // ✅ Fetch by specific entry UID
+    let entry = Stack.ContentType("about_page").Entry("blta084a7364fb8b5ef");
+    entry = withLivePreview(entry);
+    
+    const result = await entry
+      .includeReference(["team", "timeline", "stats", "values"])
+      .toJSON()
+      .fetch();
+    
+    console.log("✅ About Page fetched:", result?.entry?.title || "Untitled");
+    return result.entry;
   } catch (error) {
     console.error("❌ Error fetching About Page:", error);
     return null;
@@ -180,7 +184,7 @@ export const getServicesPage = async () => {
 };
 
 // ==============================
-// 🧾 PRODUCTS
+// 🧾 PRODUCTS (All & By Page)
 // ==============================
 export const getAllProducts = async () => {
   try {
@@ -211,4 +215,45 @@ export const getProductPage = async () => {
   }
 };
 
+// ==============================
+// 🔍 PRODUCT BY ID (Fixed)
+// ==============================
+export const getProductById = async (productId) => {
+  try {
+    console.log(`🔍 Fetching Product by ID: ${productId}`);
+    
+    // ✅ Get all products first
+    const products = await getAllProducts();
+    
+    if (!products || products.length === 0) {
+      console.warn("⚠️ No products found");
+      return null;
+    }
+    
+    // ✅ Find the product by matching the ID
+    const product = products.find((p) => {
+      // Check multiple possible ID fields
+      return (
+        p.uid === productId ||
+        p._metadata?.uid === productId ||
+        p.product_id === productId ||
+        p.id === productId
+      );
+    });
+    
+    if (product) {
+      console.log("✅ Product found:", product.product_name || product.title || product.name);
+      return product;
+    }
+    
+    console.warn(`⚠️ Product not found with ID: ${productId}`);
+    console.log("Available product IDs:", products.map(p => p.uid || p._metadata?.uid));
+    return null;
+  } catch (error) {
+    console.error("❌ Error fetching Product by ID:", error);
+    return null;
+  }
+};
+
+// ==============================
 export { VB_EmptyBlockParentClass };
