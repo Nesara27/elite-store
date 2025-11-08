@@ -1,29 +1,37 @@
-import * as contentstack from "contentstack";
+
+// ✅ Use only the browser-safe SDK for Next.js + Live Preview
+import * as contentstack from "@contentstack/delivery-sdk/browser";
+
 
 import ContentstackLivePreview, {
   VB_EmptyBlockParentClass,
 } from "@contentstack/live-preview-utils";
 
-// ✅ Configuration
-const API_KEY = process.env.NEXT_PUBLIC_CONTENTSTACK_API_KEY || "blt18d10037183f942b";
-const DELIVERY_TOKEN = process.env.NEXT_PUBLIC_CONTENTSTACK_DELIVERY_TOKEN || "cs2db14d3ab10ccece9d42e28a";
-const PREVIEW_TOKEN = process.env.NEXT_PUBLIC_CONTENTSTACK_PREVIEW_TOKEN || "cs565b41a59524c55a6a9bbff3";
-const ENVIRONMENT = process.env.NEXT_PUBLIC_CONTENTSTACK_ENVIRONMENT || "development";
+// ==============================
+// 🔧 Configuration
+// ==============================
+const API_KEY =
+  process.env.NEXT_PUBLIC_CONTENTSTACK_API_KEY || "blt18d10037183f942b";
+const DELIVERY_TOKEN =
+  process.env.NEXT_PUBLIC_CONTENTSTACK_DELIVERY_TOKEN || "cs2db14d3ab10ccece9d42e28a";
+const PREVIEW_TOKEN =
+  process.env.NEXT_PUBLIC_CONTENTSTACK_PREVIEW_TOKEN || "cs565b41a59524c55a6a9bbff3";
+const ENVIRONMENT =
+  process.env.NEXT_PUBLIC_CONTENTSTACK_ENVIRONMENT || "development";
 const BRANCH = process.env.NEXT_PUBLIC_CONTENTSTACK_BRANCH || "main";
 
-// ✅ Use Preview Host for Live Preview
 const PREVIEW_HOST = "rest-preview.contentstack.com";
 
+// ==============================
 // 🏗️ Initialize the Contentstack Stack
+// ==============================
 export const Stack = contentstack.Stack({
   api_key: API_KEY,
-  delivery_token: DELIVERY_TOKEN, // ✅ Use Delivery Token for API calls
+  delivery_token: DELIVERY_TOKEN,
   environment: ENVIRONMENT,
   branch: BRANCH,
   region: contentstack.Region.US,
-  host: PREVIEW_HOST, // ✅ Use Preview API
-
-  // ✅ Enable Live Preview SDK
+  host: PREVIEW_HOST,
   live_preview: {
     enable: true,
     preview_token: PREVIEW_TOKEN,
@@ -32,7 +40,9 @@ export const Stack = contentstack.Stack({
   },
 });
 
-// 🧠 Initialize Contentstack Live Preview SDK (Browser only)
+// ==============================
+// 🧠 Initialize Live Preview SDK (Browser only)
+// ==============================
 if (typeof window !== "undefined") {
   window.addEventListener("load", () => {
     setTimeout(() => {
@@ -41,15 +51,12 @@ if (typeof window !== "undefined") {
           ContentstackLivePreview.init({
             enable: true,
             ssr: false,
-            mode: "builder", // 👈 required for Visual Builder
+            mode: "builder",
             stackSdk: Stack,
-
-            // ✅ REQUIRED: Stack details for authentication
             stackDetails: {
-              apiKey: process.env.NEXT_PUBLIC_CONTENTSTACK_API_KEY,
-              environment: process.env.NEXT_PUBLIC_CONTENTSTACK_ENVIRONMENT,
+              apiKey: API_KEY,
+              environment: ENVIRONMENT,
             },
-
             clientUrlParams: {
               protocol: "https",
               host: "app.contentstack.com",
@@ -66,7 +73,6 @@ if (typeof window !== "undefined") {
             },
             cleanCslpOnProduction: true,
           });
-
           console.log("✅ Live Preview SDK initialized successfully");
           window.__CS_LIVE_PREVIEW_INIT__ = true;
         }
@@ -77,8 +83,9 @@ if (typeof window !== "undefined") {
   });
 }
 
-
+// ==============================
 // 🧩 Helper: Add Live Preview hash
+// ==============================
 const withLivePreview = (entryOrQuery) => {
   try {
     if (typeof window !== "undefined") {
@@ -107,7 +114,6 @@ export const getHomePage = async () => {
       .includeReference(["features", "featured_products"])
       .toJSON()
       .find();
-
     const entry = result?.[0]?.[0];
     console.log("✅ Home Page fetched:", entry?.title || "Untitled");
     return entry;
@@ -161,7 +167,7 @@ export const getAboutPage = async () => {
 // ==============================
 export const getServicesPage = async () => {
   try {
-    console.log("🛠 Fetching Services Page...");
+    console.log("🛠️ Fetching Services Page...");
     let query = Stack.ContentType("services_page").Query();
     query = withLivePreview(query);
     const result = await query.toJSON().find();
