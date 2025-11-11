@@ -1108,6 +1108,7 @@ jstag.pageView();
           `,
         }}
       />
+      <script src="https://analytics.ahrefs.com/analytics.js" data-key="fBV7N6xYAcrmsoO61EvfaA" async></script>
 
       {/* ====== SEO HEAD ====== */}
       <Head>

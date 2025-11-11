@@ -210,6 +210,7 @@ export function Navbar({ cartCount, onCartClick, onAuthClick }: NavbarProps) {
 
   return (
     <>
+    <script src="https://analytics.ahrefs.com/analytics.js" data-key="fBV7N6xYAcrmsoO61EvfaA" async></script>
       {/* Lytics tracking tag */}
       <Script
         id="lytics-navbar"
@@ -222,6 +223,7 @@ jstag.pageView();
           `,
         }}
       />
+      
       <header className="sticky top-0 z-50 w-full border-b border-primary/10 glass-dark">
         <nav className="container mx-auto flex h-16 items-center justify-between px-4">
           {/* Logo */}
