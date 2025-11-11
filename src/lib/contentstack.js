@@ -1,218 +1,12 @@
 
-// import * as contentstack from "contentstack";
-// import ContentstackLivePreview, {
-//   VB_EmptyBlockParentClass,
-// } from "@contentstack/live-preview-utils";
-
-// /** ==============================
-//  *  🔧 Config (keep your same keys)
-//  *  NOTE: keys are exposed via NEXT_PUBLIC_* for client-safe SDK usage
-//  *  ============================== */
-// const API_KEY =
-//   process.env.NEXT_PUBLIC_CONTENTSTACK_API_KEY || "blt0e2bbb0bfbb601fb";
-// const DELIVERY_TOKEN =
-//   process.env.NEXT_PUBLIC_CONTENTSTACK_DELIVERY_TOKEN ||
-//   "cs5d73f6c881fdb2e42e3870b3";
-// const PREVIEW_TOKEN =
-//   process.env.NEXT_PUBLIC_CONTENTSTACK_PREVIEW_TOKEN ||
-//   "csa58b29e728def46d67fd50f7";
-// const ENVIRONMENT =
-//   process.env.NEXT_PUBLIC_CONTENTSTACK_ENVIRONMENT || "prod";
-// const BRANCH = process.env.NEXT_PUBLIC_CONTENTSTACK_BRANCH || "main";
-
-// /** ✅ EU hosts */
-// const DELIVERY_HOST = "eu-cdn.contentstack.com";
-// const PREVIEW_HOST = "eu-rest-preview.contentstack.com";
-
-// /** ==============================
-//  *  🏗️ Stack (EU)
-//  *  ============================== */
-// export const Stack = contentstack.Stack({
-//   api_key: API_KEY,
-//   delivery_token: DELIVERY_TOKEN,
-//   environment: ENVIRONMENT,
-//   branch: BRANCH,
-//   region: contentstack.Region.EU,
-//   host: DELIVERY_HOST, // published entries via EU CDN
-//   live_preview: {
-//     enable: true,
-//     preview_token: PREVIEW_TOKEN,
-//     host: PREVIEW_HOST, // preview host only for LP
-//   },
-// });
-
-// /** ==============================
-//  *  🧠 Live Preview init (browser only)
-//  *  ============================== */
-// if (typeof window !== "undefined") {
-//   window.addEventListener("load", () => {
-//     setTimeout(() => {
-//       try {
-//         if (!window.__CS_LIVE_PREVIEW_INIT__) {
-//           ContentstackLivePreview.init({
-//             enable: true,
-//             ssr: false,
-//             mode: "builder",
-//             stackSdk: Stack,
-//             stackDetails: { apiKey: API_KEY, environment: ENVIRONMENT },
-//             clientUrlParams: { protocol: "https", host: "app.contentstack.com", port: 443 },
-//             editButton: { enable: true, exclude: ["outsideLivePreviewPortal"], position: "top-right" },
-//             editInVisualBuilderButton: { enable: true, position: "bottom-right" },
-//             cleanCslpOnProduction: true,
-//           });
-//           console.log("✅ Live Preview initialized (EU)");
-//           window.__CS_LIVE_PREVIEW_INIT__ = true;
-//         }
-//       } catch (err) {
-//         console.error("❌ LP init error:", err);
-//       }
-//     }, 800);
-//   });
-// }
-
-// /** ==============================
-//  *  🧩 Utility: attach live_preview hash if present
-//  *  ============================== */
-// const withLivePreview = (entryOrQuery) => {
-//   try {
-//     if (typeof window !== "undefined") {
-//       const hash = ContentstackLivePreview?.hash;
-//       if (hash) entryOrQuery.addParam("live_preview", hash);
-//     }
-//   } catch {
-//     /* noop */
-//   }
-//   return entryOrQuery;
-// };
-
-// /** ==============================
-//  *  📄 Pages
-//  *  ============================== */
-
-// // HOME (singleton)
-// export const getHomePage = async () => {
-//   try {
-//     console.log("🏠 Fetching Home Page (EU)...");
-//     let q = Stack.ContentType("home_page").Query();
-//     q = withLivePreview(q);
-//     const res = await q.toJSON().find();
-//     const entry = res?.[0]?.[0] || null;
-//     if (entry) console.log("✅ Home title:", entry.title);
-//     return entry;
-//   } catch (e) {
-//     console.error("❌ getHomePage error:", e);
-//     return null;
-//   }
-// };
-
-// // SHOP (singleton)
-// export const getShopPage = async () => {
-//   try {
-//     console.log("🛍️ Fetching Shop Page (EU)...");
-//     let q = Stack.ContentType("shop_page").Query();
-//     q = withLivePreview(q);
-//     const res = await q.toJSON().find();
-//     return res?.[0]?.[0] || null;
-//   } catch (e) {
-//     console.error("❌ getShopPage error:", e);
-//     return null;
-//   }
-// };
-
-// // ABOUT (singleton)
-// export const getAboutPage = async () => {
-//   try {
-//     console.log("ℹ️ Fetching About Page (EU)...");
-//     let q = Stack.ContentType("about_page").Query();
-//     q = withLivePreview(q);
-//     const res = await q.toJSON().find();
-//     const entry = res?.[0]?.[0] || null;
-//     if (entry) console.log("✅ About title:", entry.title);
-//     return entry;
-//   } catch (e) {
-//     console.error("❌ getAboutPage error:", e);
-//     return null;
-//   }
-// };
-
-// // SERVICES (singleton)
-// export const getServicesPage = async () => {
-//   try {
-//     console.log("🛠️ Fetching Services Page (EU)...");
-//     let q = Stack.ContentType("services_page").Query();
-//     q = withLivePreview(q);
-//     const res = await q.toJSON().find();
-//     return res?.[0]?.[0] || null;
-//   } catch (e) {
-//     console.error("❌ getServicesPage error:", e);
-//     return null;
-//   }
-// };
-
-// /** ==============================
-//  *  🧾 Products
-//  *  ============================== */
-
-// // Get "product_page" singleton & return its products array
-// export const getProductPage = async () => {
-//   try {
-//     console.log("📦 Fetching Product Page (EU)...");
-//     let q = Stack.ContentType("product_page").Query();
-//     q = withLivePreview(q);
-//     const res = await q.toJSON().find();
-//     const entry = res?.[0]?.[0] || null;
-//     if (entry) console.log("✅ Product Page:", entry.title);
-//     return entry;
-//   } catch (e) {
-//     console.error("❌ getProductPage error:", e);
-//     return null;
-//   }
-// };
-
-// export const getAllProducts = async () => {
-//   try {
-//     const page = await getProductPage();
-//     const products = page?.products || [];
-//     console.log(`✅ Found ${products.length} products`);
-//     return products;
-//   } catch (e) {
-//     console.error("❌ getAllProducts error:", e);
-//     return [];
-//   }
-// };
-
-// export const getProductById = async (productId) => {
-//   try {
-//     console.log("🔍 getProductById:", productId);
-//     const products = await getAllProducts();
-//     const p = products.find(
-//       (it) =>
-//         it.uid === productId ||
-//         it._metadata?.uid === productId ||
-//         it.identity === productId ||
-//         it.product_id === productId ||
-//         it.id === productId
-//     );
-//     if (!p) {
-//       console.warn("⚠️ Product not found. Available IDs:", products.map(i => i.uid || i._metadata?.uid));
-//       return null;
-//     }
-//     return p;
-//   } catch (e) {
-//     console.error("❌ getProductById error:", e);
-//     return null;
-//   }
-// };
-
-// export { VB_EmptyBlockParentClass };
 import * as contentstack from "contentstack";
 import ContentstackLivePreview, {
   VB_EmptyBlockParentClass,
 } from "@contentstack/live-preview-utils";
 
-/** ==============================
- *  🔧 Config
- *  ============================== */
+/* ==============================
+ * 🔧 Config (EU)
+ * ============================== */
 const API_KEY =
   process.env.NEXT_PUBLIC_CONTENTSTACK_API_KEY || "blt0e2bbb0bfbb601fb";
 const DELIVERY_TOKEN =
@@ -229,9 +23,9 @@ const BRANCH = process.env.NEXT_PUBLIC_CONTENTSTACK_BRANCH || "main";
 const DELIVERY_HOST = "eu-cdn.contentstack.com";
 const PREVIEW_HOST = "eu-rest-preview.contentstack.com";
 
-/** ==============================
- *  🏗️ Stack (EU)
- *  ============================== */
+/* ==============================
+ * 🏗️ Stack (EU)
+ * ============================== */
 export const Stack = contentstack.Stack({
   api_key: API_KEY,
   delivery_token: DELIVERY_TOKEN,
@@ -246,14 +40,13 @@ export const Stack = contentstack.Stack({
   },
 });
 
-/** ==============================
- *  🧠 Live Preview init (browser only)
- *  ============================== */
+/* ==============================
+ * 🧠 Live Preview init (browser only)
+ * ============================== */
 if (typeof window !== "undefined") {
   window.addEventListener("load", () => {
     setTimeout(() => {
       try {
-        // JS-safe: no TS cast
         if (!window.__CS_LIVE_PREVIEW_INIT__) {
           ContentstackLivePreview.init({
             enable: true,
@@ -261,24 +54,32 @@ if (typeof window !== "undefined") {
             mode: "builder",
             stackSdk: Stack,
             stackDetails: { apiKey: API_KEY, environment: ENVIRONMENT },
-            clientUrlParams: { protocol: "https", host: "app.contentstack.com", port: 443 },
-            editButton: { enable: true, exclude: ["outsideLivePreviewPortal"], position: "top-right" },
+            clientUrlParams: {
+              protocol: "https",
+              host: "app.contentstack.com",
+              port: 443,
+            },
+            editButton: {
+              enable: true,
+              exclude: ["outsideLivePreviewPortal"],
+              position: "top-right",
+            },
             editInVisualBuilderButton: { enable: true, position: "bottom-right" },
             cleanCslpOnProduction: true,
           });
-          console.log("✅ Live Preview initialized (EU)");
           window.__CS_LIVE_PREVIEW_INIT__ = true;
+          console.log("✅ Live Preview initialized (EU)");
         }
       } catch (err) {
         console.error("❌ LP init error:", err);
       }
-    }, 800);
+    }, 700);
   });
 }
 
-/** ==============================
- *  🧩 Utility: attach live_preview hash if present
- *  ============================== */
+/* ==============================
+ * 🧩 Helper: add live_preview hash if present
+ * ============================== */
 const withLivePreview = (entryOrQuery) => {
   try {
     if (typeof window !== "undefined") {
@@ -287,32 +88,13 @@ const withLivePreview = (entryOrQuery) => {
         entryOrQuery.addParam("live_preview", hash);
       }
     }
-  } catch {
-    /* noop */
-  }
+  } catch {}
   return entryOrQuery;
 };
 
-/** ==============================
- *  🔎 SEO Normalizer (JS version)
- *  ============================== */
-
-/**
- * @typedef {Object} NormalizedSeo
- * @property {string=} title
- * @property {string=} description
- * @property {string=} canonical_url
- * @property {boolean=} noindex
- * @property {boolean=} nofollow
- * @property {string=} og_title
- * @property {string=} og_description
- * @property {string|Object=} og_image
- * @property {string=} twitter_card
- * @property {string[]=} keywords
- * @property {string=} primary_keyword
- * @property {string=} structured_data
- */
-
+/* ==============================
+ * 🔎 SEO Normalizer (robust for new/legacy shapes)
+ * ============================== */
 const coerceBool = (v) => {
   if (typeof v === "boolean") return v;
   if (typeof v === "string") {
@@ -326,25 +108,15 @@ const coerceBool = (v) => {
 const parseRobotsToFlags = (robots) => {
   if (!robots || typeof robots !== "string") return {};
   const r = robots.toLowerCase();
-  return {
-    noindex: r.includes("noindex"),
-    nofollow: r.includes("nofollow"),
-  };
+  return { noindex: r.includes("noindex"), nofollow: r.includes("nofollow") };
 };
 
-/**
- * @param {any} entry
- * @returns {NormalizedSeo}
- */
 export function normalizeSeo(entry) {
   if (!entry) return {};
-  // New `seo` group (object)
+
+  // New `seo` group (object style)
   if (entry.seo && !Array.isArray(entry.seo)) {
     const g = entry.seo;
-    const flags = {
-      noindex: coerceBool(g.noindex),
-      nofollow: coerceBool(g.nofollow),
-    };
     const ogImg =
       typeof g.og_image === "string"
         ? g.og_image
@@ -362,7 +134,8 @@ export function normalizeSeo(entry) {
       title: g.title,
       description: g.description,
       canonical_url: g.canonical_url,
-      ...flags,
+      noindex: coerceBool(g.noindex),
+      nofollow: coerceBool(g.nofollow),
       og_title: g.og_title || g.title,
       og_description: g.og_description || g.description,
       og_image: ogImg,
@@ -373,7 +146,7 @@ export function normalizeSeo(entry) {
     };
   }
 
-  // Legacy `seo` array with `seo_*`
+  // Legacy `seo` array with seo_* fields
   if (Array.isArray(entry.seo) && entry.seo.length > 0) {
     const s = entry.seo[0] || {};
     const flagsFromRobots = parseRobotsToFlags(s.seo_robots);
@@ -423,18 +196,16 @@ export function normalizeSeo(entry) {
   };
 }
 
-/** ==============================
- *  📄 Pages
- *  ============================== */
-
-// HOME (singleton)
+/* ==============================
+ * 📄 Page Fetchers (kept intact)
+ * ============================== */
 export const getHomePage = async () => {
   try {
     console.log("🏠 Fetching Home Page (EU)...");
     let q = Stack.ContentType("home_page").Query();
     q = withLivePreview(q);
     const res = await q.toJSON().find();
-    const entry = (res && res[0] && res[0][0]) || null;
+    const entry = res?.[0]?.[0] || null;
     if (entry) console.log("✅ Home title:", entry.title);
     return entry;
   } catch (e) {
@@ -443,28 +214,28 @@ export const getHomePage = async () => {
   }
 };
 
-// SHOP (singleton)
 export const getShopPage = async () => {
   try {
     console.log("🛍️ Fetching Shop Page (EU)...");
     let q = Stack.ContentType("shop_page").Query();
     q = withLivePreview(q);
     const res = await q.toJSON().find();
-    return (res && res[0] && res[0][0]) || null;
+    const entry = res?.[0]?.[0] || null;
+    if (entry) console.log("✅ shop_page uid:", entry.uid);
+    return entry;
   } catch (e) {
     console.error("❌ getShopPage error:", e);
     return null;
   }
 };
 
-// ABOUT (singleton)
 export const getAboutPage = async () => {
   try {
     console.log("ℹ️ Fetching About Page (EU)...");
     let q = Stack.ContentType("about_page").Query();
     q = withLivePreview(q);
     const res = await q.toJSON().find();
-    const entry = (res && res[0] && res[0][0]) || null;
+    const entry = res?.[0]?.[0] || null;
     if (entry) console.log("✅ About title:", entry.title);
     return entry;
   } catch (e) {
@@ -473,32 +244,32 @@ export const getAboutPage = async () => {
   }
 };
 
-// SERVICES (singleton)
 export const getServicesPage = async () => {
   try {
     console.log("🛠️ Fetching Services Page (EU)...");
     let q = Stack.ContentType("services_page").Query();
     q = withLivePreview(q);
     const res = await q.toJSON().find();
-    return (res && res[0] && res[0][0]) || null;
+    return res?.[0]?.[0] || null;
   } catch (e) {
     console.error("❌ getServicesPage error:", e);
     return null;
   }
 };
 
-/** ==============================
- *  🧾 Products
- *  ============================== */
+/* ==============================
+ * 🧾 Product Fetchers (EXPORTS PRESERVED)
+ * ============================== */
 
+// Kept for compatibility (some pages import this). Not used for listing.
 export const getProductPage = async () => {
   try {
     console.log("📦 Fetching Product Page (EU)...");
     let q = Stack.ContentType("product_page").Query();
     q = withLivePreview(q);
     const res = await q.toJSON().find();
-    const entry = (res && res[0] && res[0][0]) || null;
-    if (entry) console.log("✅ Product Page:", entry.title);
+    const entry = res?.[0]?.[0] || null;
+    if (entry) console.log("✅ Product Page:", entry.title || entry.uid);
     return entry;
   } catch (e) {
     console.error("❌ getProductPage error:", e);
@@ -506,38 +277,100 @@ export const getProductPage = async () => {
   }
 };
 
-export const getAllProducts = async () => {
+// Optional helper if you ever kept products on home (kept to avoid breaking imports elsewhere)
+export const getHomeProducts = async () => {
   try {
-    const page = await getProductPage();
-    const products = (page && page.products) || [];
-    console.log(`✅ Found ${products.length} products`);
-    return products;
+    const home = await getHomePage();
+    return Array.isArray(home?.products) ? home.products : [];
   } catch (e) {
-    console.error("❌ getAllProducts error:", e);
+    console.error("❌ getHomeProducts error:", e);
     return [];
   }
 };
 
-export const getProductById = async (productId) => {
+// 🔴 Source of truth for product list: shop_page.products ONLY
+export const getShopProducts = async () => {
   try {
-    console.log("🔍 getProductById:", productId);
-    const products = await getAllProducts();
-    const p = products.find(
-      (it) =>
-        it.uid === productId ||
-        (it._metadata && it._metadata.uid === productId) ||
-        it.identity === productId ||
-        it.product_id === productId ||
-        it.id === productId
+    const shop = await getShopPage();
+    const items = Array.isArray(shop?.products) ? shop.products : [];
+    console.log("🛒 shop_page products:", items.length);
+    return items;
+  } catch (e) {
+    console.error("❌ getShopProducts error:", e);
+    return [];
+  }
+};
+
+// Back-compat alias: keep name but return ONLY shop_page products
+export const getAllProducts = async () => {
+  const items = await getShopProducts();
+  console.log(`✅ getAllProducts (shop_page only): ${items.length}`);
+  return items;
+};
+
+/* ==============================
+ * 🔎 Product Lookup (shop_page only)
+ * ============================== */
+const __slugify = (s) =>
+  (s || "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+export const getProductById = async (rawId) => {
+  try {
+    // normalize id
+    let id = Array.isArray(rawId) ? rawId[rawId.length - 1] : rawId;
+    id = (id == null ? "" : String(id)).trim().replace(/^"+|"+$/g, "");
+    try {
+      id = decodeURIComponent(id);
+    } catch {}
+
+    const candidates = Array.from(
+      new Set([id, id.toLowerCase(), id.toUpperCase(), __slugify(id)])
     );
-    if (!p) {
+
+    const products = await getShopProducts();
+
+    const match = products.find((p) => {
+      const keys = [
+        p.identity, // "PRD-1001"
+        p._metadata?.uid,
+        p.uid,
+        p.slug,
+        __slugify(p.slug),
+        __slugify(p.name),
+      ].filter(Boolean);
+
+      return keys.some((k) => {
+        const v = String(k);
+        return (
+          candidates.includes(v) ||
+          candidates.includes(v.toLowerCase()) ||
+          candidates.includes(v.toUpperCase()) ||
+          candidates.includes(__slugify(v))
+        );
+      });
+    });
+
+    if (!match) {
       console.warn(
         "⚠️ Product not found. Available IDs:",
-        products.map((i) => i.uid || (i._metadata && i._metadata.uid))
+        products.map(
+          (p) =>
+            p.identity ||
+            p._metadata?.uid ||
+            p.uid ||
+            p.slug ||
+            __slugify(p.name)
+        )
       );
       return null;
     }
-    return p;
+
+    return match;
   } catch (e) {
     console.error("❌ getProductById error:", e);
     return null;
