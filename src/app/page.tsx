@@ -2,6 +2,7 @@
 // "use client";
 
 // import { useEffect, useMemo, useRef, useState } from "react";
+// import Head from "next/head";
 // import Link from "next/link";
 // import {
 //   ArrowRight,
@@ -26,7 +27,7 @@
 // import { ClientLayout } from "@/components/ClientLayout";
 // import { InstantCartToast } from "@/components/InstantCartToast";
 // import { useCart } from "@/hooks/useCart";
-// import { getHomePage, getProductPage } from "@/lib/contentstack";
+// import { getHomePage, getProductPage, normalizeSeo, type NormalizedSeo } from "@/lib/contentstack";
 
 // type DealBadge = "B1G1" | "50% OFF" | null;
 
@@ -179,7 +180,7 @@
 //               <div className="relative overflow-hidden rounded-xl border bg-card">
 //                 <img
 //                   src={p.image}
-//                   alt={p.name}
+//                   alt={p.description || p.name || "Product image"}
 //                   className="h-56 w-full object-cover transition-transform group-hover/card:scale-[1.02]"
 //                 />
 
@@ -240,6 +241,8 @@
 //   const [products, setProducts] = useState<Product[]>([]);
 //   const [slideIndex, setSlideIndex] = useState(0);
 
+//   const [seo, setSeo] = useState<NormalizedSeo | null>(null);
+
 //   const discountRef = useRef<HTMLDivElement | null>(null);
 //   const promoLen = useMemo(() => discount.promos?.length || 0, [discount.promos]);
 
@@ -256,6 +259,9 @@
 //         const home = await getHomePage();
 
 //         if (home) {
+//           // SEO (normalize supports both new `seo` group and legacy `seo_*`)
+//           setSeo(normalizeSeo(home));
+
 //           // HERO
 //           const h = home.hero || {};
 //           const bannerUrl = h.banner_image?.url || h.banner || FALLBACK.HERO.banner;
@@ -302,7 +308,7 @@
 //             promos,
 //           });
 
-//           // ===== FEATURED PRODUCTS (from home_page.products) =====
+//           // PRODUCTS
 //           const homeProducts = Array.isArray(home.products) ? home.products : [];
 //           const mappedFromHome: Product[] = homeProducts.map((p: any, idx: number) => {
 //             const badgeRaw =
@@ -331,7 +337,6 @@
 //             };
 //           });
 
-//           // If home_page has products use them; else fallback to product_page.products
 //           if (mappedFromHome.length) {
 //             setProducts(mappedFromHome);
 //           } else {
@@ -382,27 +387,86 @@
 //     })();
 //   }, []);
 
+//   const ogImg =
+//     (typeof seo?.og_image === "string" && seo?.og_image) ||
+//     (seo?.og_image && (seo.og_image as any).url) ||
+//     undefined;
+
+//   // JSON-LD prepared from normalized seo (falls back to basic)
+//   const ldJson = seo?.structured_data
+//     ? seo.structured_data
+//     : JSON.stringify({
+//         "@context": "https://schema.org",
+//         "@type": "WebSite",
+//         name: "Elite Store",
+//         url: seo?.canonical_url || "https://www.elitestore.com/",
+//         keywords: Array.isArray(seo?.keywords) ? seo?.keywords.join(", ") : undefined,
+//         potentialAction: {
+//           "@type": "SearchAction",
+//           target: "https://www.elitestore.com/shop?search={search_term_string}",
+//           "query-input": "required name=search_term_string",
+//         },
+//       });
+
 //   return (
 //     <ClientLayout>
+//       {/* ====== SEO HEAD ====== */}
+//       <Head>
+//         <title>{seo?.title || hero.title || "Elite Store"}</title>
+//         {seo?.description && <meta name="description" content={seo.description} />}
+//         {seo?.canonical_url && <link rel="canonical" href={seo.canonical_url} />}
+
+//         {/* Robots */}
+//         <meta
+//           name="robots"
+//           content={`${seo?.noindex ? "noindex" : "index"}, ${seo?.nofollow ? "nofollow" : "follow"}`}
+//         />
+
+//         {/* Keywords (optional) */}
+//         {Array.isArray(seo?.keywords) && seo.keywords.length > 0 && (
+//           <meta name="keywords" content={seo.keywords.join(", ")} />
+//         )}
+
+//         {/* Open Graph */}
+//         <meta property="og:type" content="website" />
+//         <meta property="og:title" content={seo?.og_title || seo?.title || hero.title} />
+//         {seo?.og_description && (
+//           <meta property="og:description" content={seo.og_description} />
+//         )}
+//         {ogImg && <meta property="og:image" content={ogImg} />}
+//         {seo?.canonical_url && <meta property="og:url" content={seo.canonical_url} />}
+
+//         {/* Twitter */}
+//         <meta name="twitter:card" content={seo?.twitter_card || "summary_large_image"} />
+//         <meta name="twitter:title" content={seo?.og_title || seo?.title || hero.title} />
+//         {seo?.og_description && (
+//           <meta name="twitter:description" content={seo.og_description} />
+//         )}
+//         {ogImg && <meta name="twitter:image" content={ogImg} />}
+
+//         {/* JSON-LD */}
+//         {ldJson && (
+//           <script
+//             type="application/ld+json"
+//             // seo.structured_data is stored as a string already, else we stringified above
+//             dangerouslySetInnerHTML={{ __html: ldJson }}
+//           />
+//         )}
+//       </Head>
+
+//       {/* ====== PAGE ====== */}
 //       <div className="flex flex-col">
 //         {/* HERO */}
 //         <section className="relative">
 //           <div className="relative h-[52vh] md:h-[64vh] w-full overflow-hidden rounded-none md:rounded-3xl">
-//             {/* <img
-//               src={hero.banner}
-//               alt="hero"
-//               className="absolute inset-0 h-full w-full object-cover"
-//             /> */}
 //             <video
-//             src={hero.banner}
-//   autoPlay
-//   loop
-//   muted
-//   playsInline
-//   className="absolute inset-0 h-full w-full object-cover"
-// ></video>
-
-            
+//               src={hero.banner}
+//               autoPlay
+//               loop
+//               muted
+//               playsInline
+//               className="absolute inset-0 h-full w-full object-cover"
+//             />
 //             <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent" />
 //             <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 pt-16 md:pt-24">
 //               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-background/80 border text-xs font-semibold">
@@ -625,6 +689,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import Script from "next/script";
 import {
   ArrowRight,
   Percent,
@@ -880,7 +945,7 @@ export default function HomePage() {
         const home = await getHomePage();
 
         if (home) {
-          // SEO (normalize supports both new `seo` group and legacy `seo_*`)
+          // SEO
           setSeo(normalizeSeo(home));
 
           // HERO
@@ -1031,6 +1096,19 @@ export default function HomePage() {
 
   return (
     <ClientLayout>
+      {/* Lytics tracking tag (after interactive) */}
+      <Script
+        id="lytics-loader"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+!function(){"use strict";var o=window.jstag||(window.jstag={}),r=[];function n(e){o[e]=function(){for(var n=arguments.length,t=new Array(n),i=0;i<n;i++)t[i]=arguments[i];r.push([e,t])}}n("send"),n("mock"),n("identify"),n("pageView"),n("unblock"),n("getid"),n("setid"),n("loadEntity"),n("getEntity"),n("on"),n("once"),n("call"),o.loadScript=function(n,t,i){var e=document.createElement("script");e.async=!0,e.src=n,e.onload=t,e.onerror=i;var o=document.getElementsByTagName("script")[0],r=o&&o.parentNode||document.head||document.body,c=o||r.lastChild;return null!=c?r.insertBefore(e,c):r.appendChild(e),this},o.init=function n(t){return this.config=t,this.loadScript(t.src,function(){if(o.init===n)throw new Error("Load error!");o.init(o.config),function(){for(var n=0;n<r.length;n++){var t=r[n][0],i=r[n][1];o[t].apply(o,i)}r=void 0}()}),this}}();
+jstag.init({ src: 'https://c.lytics.io/api/tag/310c5dfc29f534db76db2f91db7477d8/latest.min.js' });
+jstag.pageView();
+          `,
+        }}
+      />
+
       {/* ====== SEO HEAD ====== */}
       <Head>
         <title>{seo?.title || hero.title || "Elite Store"}</title>
@@ -1069,7 +1147,6 @@ export default function HomePage() {
         {ldJson && (
           <script
             type="application/ld+json"
-            // seo.structured_data is stored as a string already, else we stringified above
             dangerouslySetInnerHTML={{ __html: ldJson }}
           />
         )}
