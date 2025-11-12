@@ -212,18 +212,21 @@ export function Navbar({ cartCount, onCartClick, onAuthClick }: NavbarProps) {
     <>
     <script src="https://analytics.ahrefs.com/analytics.js" data-key="fBV7N6xYAcrmsoO61EvfaA" async></script>
       {/* Lytics tracking tag */}
-      <Script
-        id="lytics-navbar"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-!function(){"use strict";var o=window.jstag||(window.jstag={}),r=[];function n(e){o[e]=function(){for(var n=arguments.length,t=new Array(n),i=0;i<n;i++)t[i]=arguments[i];r.push([e,t])}}n("send"),n("mock"),n("identify"),n("pageView"),n("unblock"),n("getid"),n("setid"),n("loadEntity"),n("getEntity"),n("on"),n("once"),n("call"),o.loadScript=function(n,t,i){var e=document.createElement("script");e.async=!0,e.src=n,e.onload=t,e.onerror=i;var o=document.getElementsByTagName("script")[0],r=o&&o.parentNode||document.head||document.body,c=o||r.lastChild;return null!=c?r.insertBefore(e,c):r.appendChild(e),this},o.init=function n(t){return this.config=t,this.loadScript(t.src,function(){if(o.init===n)throw new Error("Load error!");o.init(o.config),function(){for(var n=0;n<r.length;n++){var t=r[n][0],i=r[n][1];o[t].apply(o,i)}r=void 0}()}),this}}();
-jstag.init({ src: 'https://c.lytics.io/api/tag/310c5dfc29f534db76db2f91db7477d8/latest.min.js' });
-jstag.pageView();
-          `,
-        }}
-      />
       
+      <Script
+  id="lytics-navbar"
+  strategy="afterInteractive"
+  dangerouslySetInnerHTML={{
+    __html: `
+!function(){"use strict";var o=window.jstag||(window.jstag={}),r=[];function n(e){o[e]=function(){for(var n=arguments.length,t=new Array(n),i=0;i<n;i++)t[i]=arguments[i];r.push([e,t])}}n("send"),n("mock"),n("identify"),n("pageView"),n("unblock"),n("getid"),n("setid"),n("loadEntity"),n("getEntity"),n("on"),n("once"),n("call"),o.loadScript=function(n,t,i){var e=document.createElement("script");e.async=!0,e.src=n,e.onload=t,e.onerror=i;var o=document.getElementsByTagName("script")[0],r=o&&o.parentNode||document.head||document.body,c=o||r.lastChild;return null!=c?r.insertBefore(e,c):r.appendChild(e),this},o.init=function n(t){return this.config=t,this.loadScript(t.src,function(){if(o.init===n)throw new Error("Load error!");o.init(o.config),function(){for(var n=0;n<r.length;n++){var t=r[n][0],i=r[n][1];o[t].apply(o,i)}r=void 0}()}),this}}();
+jstag.init({
+  src: 'https://c.lytics.io/api/tag/e12c6acf52b278289709359950da0335/latest.min.js'
+});
+jstag.pageView();
+    `,
+  }}
+/>
+
       <header className="sticky top-0 z-50 w-full border-b border-primary/10 glass-dark">
         <nav className="container mx-auto flex h-16 items-center justify-between px-4">
           {/* Logo */}
