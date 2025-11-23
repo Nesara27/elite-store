@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,15 @@ import { ProductCard } from "@/components/ui/ProductCard";
 import { ClientLayout } from "@/components/ClientLayout";
 import { useCart } from "@/hooks/useCart";
 import { getShopPage, getProductPage, getAllProducts } from "@/lib/contentstack";
+
+// Wrapper to fix the useSearchParams prerender error
+export default function ShopPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading Shop...</div>}>
+      <ShopPage />
+    </Suspense>
+  );
+}
 
 // ==============================
 // 🧾 Product Type
@@ -39,7 +48,7 @@ type LocalProduct = {
 // ==============================
 // 🛍️ SHOP PAGE COMPONENT
 // ==============================
-export default function ShopPage() {
+function ShopPage() {
   const searchParams = useSearchParams();
   const { addToCart } = useCart();
 
@@ -68,21 +77,19 @@ export default function ShopPage() {
         let data: any = await getShopPage();
         console.log("📦 shop_page raw:", data);
 
-        // fallback to product_page if shop_page not found
         if (!data || !data.products) {
-          console.warn("⚠️ No shop_page data. Falling back to product_page...");
+          console.warn("⚠️ No shop_page data. Fallback to product_page...");
           data = await getProductPage();
         }
 
-        // fallback to all products if still missing
         if (!data || !data.products) {
-          console.warn("⚠️ No product_page data. Falling back to all products...");
+          console.warn("⚠️ No product_page data. Fallback to all products...");
           const allProducts = await getAllProducts();
           data = { products: allProducts, categories: [] };
         }
 
         if (!data || !data.products) {
-          throw new Error("No product data found from any source.");
+          throw new Error("No product data found.");
         }
 
         // Normalize categories
@@ -129,9 +136,7 @@ export default function ShopPage() {
                 typeof f === "string" ? f : f?.feature_text ?? ""
               );
             } else if (typeof p.features === "string") {
-              // ✅ FIXED TypeScript typing for 's'
-             features = p.features.split(/\r?\n/).map((s: string) => s.trim());
-
+              features = p.features.split(/\r?\n/).map((s: string) => s.trim());
             }
           }
 
@@ -162,7 +167,7 @@ export default function ShopPage() {
         }
       } catch (err: any) {
         console.error("❌ Error fetching Shop Page:", err);
-        const msg = err?.message || "Failed to fetch products from Contentstack.";
+        const msg = err?.message || "Failed to fetch products.";
         if (mounted) setErrorMsg(msg);
       } finally {
         if (mounted) setLoading(false);
@@ -214,8 +219,6 @@ export default function ShopPage() {
         break;
       case "name":
         result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      default:
         break;
     }
 
@@ -358,3 +361,4 @@ export default function ShopPage() {
     </ClientLayout>
   );
 }
+
